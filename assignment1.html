@@ -1,25 +1,104 @@
-<!DOCTYPE html> 
-<html> 
-    <head> 
-        <meta charset="utf-8"> 
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
 
-        <title>Example Student's HCDE 439 Physical Computing Page!</title> 
+        <title>A1: Blink!</title>
 
         <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
 
-    </head> 
-    <body> 
+    </head>
 
-        <div class="header">
-            <h1>Example Student's Assignment 1!</h1>
-            <p>
-            <img src="red-panda.jpg" width=400></a>
-            </p>
-            <p>
-            Here is all the documentation for assignment 1!
-            </p>
-        </div>
-        
-    </body>
+    <body>
+      <div class="header">
+          <h1>A1: Blink!</h1>
+          <p>
+          <a><img src="a1/circuit.jpg" width=400></a>
+          </p>
+          <p>
+          I looked at the available LED colors in the kit and figured that I may as well mimic a traffic light.
+          </p>
+      </div>
+      <div class="homework">
+        <h3>
+          Schematic:
+        </h3>
+        <a><img src="a1/schematic.png" width=400></a>
+        <p style="padding: 10px 30px 10px">
+          The voltage drop across red, yellow, and green LEDs are all 1.8V, and each pin supplies 5V. <br>
+          5V - 1.8V =  3.2V <br>
+          And we want to run each LED with 20 mA of current, which is 0.02A <br>
+          So with V = IR (ohm's law):<br>
+          3.2V = 0.02A * R <br>
+          R = 160Ω (or more) <br>
+          I opted to use 220 ohm resistors for each LED because that's the closest
+          stock resistor in the kit that is greater than 160Ω. <br>
+          If I used one under 160Ω, that would be too much current for the LED.
+        </p>
+
+        <h3>
+          Circuit Image:
+        </h3>
+        <a style="padding: 10px 30px 10px"><img src="a1/topdown.jpg" width=400></a>
+        <p style="padding: 10px 30px 10px">
+          A colored wire connects each pin to a 220Ω resistor and subsequently each LED, which all runs back to ground.
+        </p>
+
+        <h3>
+          Code Snippet:
+        </h3>
+        <pre>
+          <code>
+          // Red LED in pin 12
+          int red = 12;
+          // Yellow LED in pin 10
+          int yellow = 10;
+          // Green LED in pin 8
+          int green = 8;
+
+          // Setup function for the board
+          void setup() {
+            // Setting the red LED pin (12) to output
+            pinMode(red, OUTPUT);
+            // Setting the yellow LED pin (10) to output
+            pinMode(yellow, OUTPUT);
+            // Setting the green LED pin (8) to output
+            pinMode(green, OUTPUT);
+          }
+
+          // Loop function to control the blinking
+          void loop() {
+            // Turning on the green light
+            digitalWrite(green, HIGH);
+            // Waiting 2 seconds
+            delay(2000);
+            // Turning off green light
+            digitalWrite(green, LOW);
+            // Turning on yellow light
+            digitalWrite(yellow, HIGH);
+            // Waiting 1 second
+            delay(1000);
+            // Turning off yellow light
+            digitalWrite(yellow, LOW);
+            // Turning on red light
+            digitalWrite(red, HIGH);
+            // Waiting 4 seconds
+            delay(4000);
+            // Turning off red light
+            digitalWrite(red, LOW);
+          }
+        </code>
+      </pre>
+      <h3>
+        Blink!
+      </h3>
+      <a style="padding: 10px 30px 10px"><img src="a1/a1.gif" width=400></a>
+      <p style="padding: 0px 30px 10px">
+        The red light is obscenely long compared to the green and yellow lights <br>
+        because that's just how red lights seem to feel when I drive - uncomfortably long.
+      </p>
+    </div>
+  </body>
+
 </html>
