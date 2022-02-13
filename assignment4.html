@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+        <title>A4: Libraries!</title>
+
+        <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
+
+    </head>
+    <body>
+      <div class="header">
+          <h1>A4: Libraries!</h1>
+          <p>
+          <img src="a4/circuit.jpg" width=400></a>
+          </p>
+          <p>
+          My mom texts me some out-of-pocket stuff.
+          </p>
+      </div>
+
+      <h3>
+        Schematic:
+      </h3>
+      <a style="padding: 30px"><img src="a4/schematic.png" width=500></a>
+      <p style="padding: 10px 30px 10px">
+        I essentially followed <a href="https://www.circuitbasics.com/how-to-set-up-an-lcd-display-on-an-arduino/">this tutorial</a> for the LCD display.<br>
+        I used a 220Ω resistor because it was recommended.<br>
+        I could've chosen a larger resistor, the screen would've just been dimmer.
+      </p>
+
+      <h3>
+        Circuit Image:
+      </h3>
+      <a style="padding: 10px 30px 10px"><img src="a4/topdown.jpg" width=400></a>
+      <p style="padding: 10px 30px 10px">
+        I think I normally elaborate here about my connections, but I'm not sure enumerating <br>
+        every single pin connection for the LCD display is particularly informative. <br>
+        Essentially, the IR sensor is there for the remote input, <br>
+        which toggles a different response on the LCD depending on the input.<br>
+        The potentiometer controls the contrast of the LCD display, and the resistor used (220Ω) determines the brightness.<br>
+      </p>
+
+      <h3>
+        Code Snippet:
+      </h3>
+      <pre>
+        <code>
+          // Initializing the IRremote library
+          #include <IRremote.hpp>
+          // Initializing library for LCD
+          #include <LiquidCrystal.h>
+
+          // Variable for the IR receiver signal pin
+          int receivePin = 9;
+
+          // Setting the pins to connect to the LCD
+          // The numbers correspond to these pin connections: LiquidCrystal(RS, E, D4, D5, D6, D7)
+          LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+          // Setup code to run once
+          void setup()
+          {
+            // Starting 9600 baud serial to check IR inputs
+            Serial.begin(9600);
+            // Starting the IR receiver on the pin set earlier, LED feedback enabled
+            IrReceiver.begin(receivePin, ENABLE_LED_FEEDBACK);
+            // Setting dimensions of the LCD display (16 columns, 2 rows)
+            lcd.begin(16, 2);
+          }
+
+          // Loop code that goes on forever
+          void loop() {
+            // If the receiver receives something
+            if (IrReceiver.decode()) {
+                // Prints the raw IR code to serial port
+                // Mostly just used this for figuring out what the codes were when I pressed the remote buttons
+                Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
+                // Function of all the stuff I want the inputs to do
+                actions();
+                // Enables receiving of the next IR input (so it doesn't get overloaded)
+                IrReceiver.resume();
+            }
+          }
+
+          // Function of all the actions given each individual IR input, 1-5
+          void actions() {
+            // Clears the screen of the LCD each time the function runs (when 1 - 5 is pressed)
+            lcd.clear();
+
+            // If the IR data received is the code for 1
+            if (IrReceiver.decodedIRData.decodedRawData == 0xF30CFF00) {
+                // Prints half the quote to the LCD
+                lcd.print("god's way is");
+                // Sets the LCD cursor to the 1st column and 2nd row
+                lcd.setCursor(0,1);
+                // Prints the rest of the quote to the LCD
+                lcd.print("the way.");
+            }
+            // If the IR data received is the code for 2
+            else if (IrReceiver.decodedIRData.decodedRawData == 0xE718FF00) {
+                // Prints half the quote to the LCD
+                lcd.print("need a job?");
+                // Sets the LCD cursor to the 1st column and 2nd row
+                lcd.setCursor(0,1);
+                // Prints the rest of the quote to the LCD
+                lcd.print("nordstrom?");
+            }
+            // If the IR data received is the code for 3
+            else if (IrReceiver.decodedIRData.decodedRawData == 0xA15EFF00) {
+                // Prints the quote to the LCD
+                lcd.print("want brownies?");
+            }
+            // If the IR data received is the code for 4
+            else if (IrReceiver.decodedIRData.decodedRawData == 0xF708FF00) {
+              // Prints half the quote to the LCD
+              lcd.print("thought you");
+              // Sets the LCD cursor to the 1st column and 2nd row
+              lcd.setCursor(0,1);
+              // Prints the rest of the quote to the LCD
+              lcd.print("were partying");
+            }
+            // If the IR data received is the code for 5
+            else if (IrReceiver.decodedIRData.decodedRawData == 0xE31CFF00) {
+              // Prints half the quote to the LCD
+              lcd.print("the new jonas");
+              // Sets the LCD cursor to the 1st column and 2nd row
+              lcd.setCursor(0,1);
+              // Prints the rest of the quote to the LCD
+              lcd.print("brothers song?");
+            }
+          }
+       </code>
+      </pre>
+      <br>
+    <h3>
+      No-context texts:
+    </h3>
+    <a style="padding: 10px 30px 10px"><img src="a4/a4.gif" width=400></a>
+    <p style="padding: 0px 30px 5px">
+      The GIF is shortened for capacity's sake, but the 5 phrases from 1 - 5 are:
+    </p>
+    <ol style="padding: 0px 60px 0px">
+      <li>"god's way is the way."</li>
+      <li>"need a job? nordstrom?"</li>
+      <li>"want brownies?"</li>
+      <li>"thought you were partying"</li>
+      <li>"the new jonas brothers song?"</li>
+    </ol>
+    <p style="padding: 0px 30px 0px">
+      And yes, these are all things my mom has texted me.
+    </p>
+  </body>
+</html>
