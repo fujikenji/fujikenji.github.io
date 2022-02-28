@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+        <title>A6: Talking to the web!</title>
+
+        <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
+
+    </head>
+    <body>
+      <div class="header">
+          <h1>A6: Talking to the web!</h1>
+          <p>
+          <img src="a6/circuit.jpg" width=400></a>
+          </p>
+          <p>
+          Time is a construct.
+          </p>
+      </div>
+
+      <h3>
+        Schematic:
+      </h3>
+      <a style="padding: 30px"><img src="a6/schematic.png" width=500></a>
+      <p style="padding: 0px 30px 10px">
+        The voltage drop across a green LED is 1.8V, and the pin supplies 5V. <br>
+        5V - 1.8V =  3.2V <br>
+        So with V = IR (ohm's law) and 20 mA of current:<br>
+        3.2V = 0.02A * R <br>
+        R = 160Ω (or more) <br>
+        I opted to use a 220 ohm resistor since that's the closest
+        stock resistor in the kit that is greater than 160Ω.<br>
+        <br>
+        I didn't want an infinite amount of current running through when the button was unpressed, so I just put in a large resistor (10kΩ). <br>
+        It was also the resistor we used in class, so I figured it'd be a good bet.<br>
+        Although I think the 5V pin is rated for 800mA - but USB ports only output 500mA.<br>
+        So that calculation would be something like: 5V = 0.8A * R so R = 6.25Ω (or larger)<br>
+        <br>
+        And for the capacitive sensor I used a 1 MΩ resistor because according to the documentation, it says: <br>
+        "Use a 1 megohm resistor (or less maybe) for absolute touch to activate", which I wanted, so that's what I went with. <br>
+
+      </p>
+
+      <h3>
+        Circuit Image:
+      </h3>
+      <a style="padding: 10px 30px 10px"><img src="a6/topdown.jpg" width=400></a>
+      <p style="padding: 10px 30px 10px">
+        The 1 MΩ resistor (capacitive sensor) is connected between pins 2 and 7, <br>
+        the LED is connected to pin 11, and the button is connected to pin 13.
+      </p>
+
+      <h3>
+        Arduino Code:
+      </h3>
+      <pre>
+        <code>
+          // Initializing capacitive sensor library
+          #include &lt;CapacitiveSensor.h&gt;
+          // Variable for sensor send pin
+          int sendPin = 2;
+          // Variable for sensor receive pin
+          int receivePin = 7;
+          // Variable for button input pin
+          int buttonPin = 13;
+          // Variable for LED pin
+          int ledPin = 11;
+          // Boolean to indicate status of light
+          bool lightOn = false;
+          // Boolean to indicate status of timer
+          bool timerOn = false;
+          // Variable for when timer starts
+          unsigned long startTime = 0;
+
+          // Initializing capacitive sensor with the pins defined above
+          CapacitiveSensor sensor = CapacitiveSensor(sendPin, receivePin);
+
+          // Setup code that runs once
+          void setup() {
+            // Initializing serial at 9600 baud
+            Serial.begin(9600);
+            // Setting the pin mode of the button pin to input
+            pinMode(buttonPin, INPUT);
+            // Setting the pin mode of the LED pin to output
+            pinMode(ledPin, OUTPUT);
+          }
+
+          // Loop code that runs forever
+          void loop() {
+            // Capacitive sensor sampling at 30 bytes
+            long sensing =  sensor.capacitiveSensor(30);
+            // Print sensor value to serial port
+            Serial.println(sensing);
+            // Arbitrary delay to not overload serial port
+            delay(50);
+
+            // If the sensor is touched and the timer is not currently going
+            // Yes, the 5000 is hard-coded.
+            // If I were to actually implement this for something I'd program some calibration
+            // But the library does some semblance of it for you (at least on the low end)
+            if (sensing > 5000 && timerOn == false) {
+              // Print "Start" to serial port
+              Serial.println("Start");
+              // Flip the state of the timer
+              timerOn = !timerOn;
+              // Record the time at which the timer starts
+              startTime = millis();
+            }
+            // If the sensor is touched, the timer is currently going, and it has been at least 500 milliseconds since the sensor was first touched
+            else if (sensing > 5000 && timerOn == true && (millis() - startTime) > 500) {
+              // Print "Stop" to serial port
+              Serial.println("Stop");
+              // Flip the state of the timer
+              timerOn = !timerOn;
+            }
+
+            // If the button is pressed
+            if (digitalRead(buttonPin) == HIGH) {
+              // Print "Reset" to serial port
+              Serial.println("Reset");
+            }
+
+            // If serial data is available
+            if (Serial.available() > 0) {
+              // If the light is on
+              if (lightOn == true) {
+                // Set the LED pin to low (turn off the light)
+                digitalWrite(ledPin, LOW);
+                // Sets status of the light to false
+                lightOn = false;
+              }
+              // If the light is not on
+              else {
+                // Set the LED pin to high (turn on the light)
+                digitalWrite(ledPin, HIGH); // use it to set the LED brightness
+                // Sets status of the light to true
+                lightOn = true;
+              }
+            }
+          }
+        </code>
+      </pre>
+      <br>
+      <h3>
+        JavaScript Code:
+      </h3>
+      <pre>
+        <code>
+          // A lot of this initializing code is from the 439 examples on github
+          // Variable to hold an instance of the serialport library
+          var serial;
+          // Variable for port name
+          var portName = 'COM4'
+          // Variable to hold start time
+          var startTime = 0;
+          // Variable to hold end time
+          var finalTime = 0;
+          // Variable for whether timer is going or not
+          var timing = false;
+
+          // Setup function that runs once
+          function setup() {
+            serial = new p5.SerialPort();       // make a new instance of the serialport library
+            serial.on('list', printList);       // set a callback function for the serialport list event
+            serial.on('connected', serverConnected); // callback for connecting to the server
+            serial.on('open', portOpen);        // callback for the port opening
+            serial.on('data', serialEvent);     // callback for when new data arrives
+            serial.on('error', serialError);    // callback for errors
+            serial.on('close', portClose);      // callback for the port closing
+
+            serial.list();                      // list the serial ports
+            serial.open(portName);              // open a serial port
+            // Creates a canvas that's 1200 x 800
+            createCanvas(1200, 800);
+            // Sets frame rate to 30 fps
+            frameRate(30);
+          }
+
+          // get the list of ports:
+          function printList(portList) {
+           // portList is an array of serial port names
+           for (var i = 0; i < portList.length; i++) {
+           // Display the list the console:
+             print(i + " " + portList[i]);
+           }
+          }
+          // Function to show status of connecting to the server
+          function serverConnected() {
+            // Prints status message to console
+            print('connected to server.');
+          }
+
+          // Function to show status of serial port
+          function portOpen() {
+            // Prints status message to console
+            print('the serial port opened.')
+          }
+
+          // Function to show status of serial port
+          function serialError(err) {
+            // Prints status message to console along with the error
+            print('Something went wrong with the serial port. ' + err);
+          }
+
+          // Function to show when serial port closes
+          function portClose() {
+            // Prints close message to console
+            print('The serial port closed.');
+          }
+
+          // If something happens in serial
+          function serialEvent() {
+            // If there is serial data
+            if (serial.available()) {
+              // Read in one line of serial data
+              var datastring = serial.readLine();
+
+              // If the line says start
+              if (datastring == "Start") {
+                // Print "start" to console
+                console.log("start");
+                // Set startTime to the current time
+                startTime = millis();
+                // Indicate that the timer is currently going
+                timing = true;
+              }
+              // If the line says stop
+              if (datastring == "Stop") {
+                // Print "stop" to console
+                console.log("stop");
+                // Indicate that the timer has stopped
+                timing = false;
+              }
+              // If the line says reset
+              if (datastring == "Reset") {
+                // Print "reset" to console
+                console.log("reset");
+                // Reset the static final time variable
+                finalTime = 0;
+              }
+            }
+          }
+
+          // If a key is pressed
+          function keyPressed() {
+            // Print the key code to the console
+            console.log(keyCode);
+            // Write the key code to serial
+          	serial.write(keyCode);
+          }
+
+          // Draw function to update appearance of the webpage
+          function draw() {
+            // Set color of background to white
+            background(255, 255, 255);
+            // If the timer is currently going
+            if (timing) {
+              // Update the time that has elapsed since timer started (calculated and rounded to display hundredths of a second)
+              let passedTime = (((millis() - startTime) / 10) * 0.01).toFixed(2);
+              // Sets text size to 50
+              textSize(50);
+              // Sets fill color of the text (a shade of blue)
+              fill(0, 75, 155);
+              // Display text that indicates how much time has passed at location 600, 400
+              text("Time: " + passedTime, 600, 400);
+              // Update finalTime for when the timer is stopped
+              finalTime = passedTime;
+            }
+            // If the timer is not currently going
+            else {
+              // Sets text size to 50
+              textSize(50);
+              // Sets fill color of the text (a shade of blue)
+              fill(0, 75, 155);
+              // Display text that indicates when the timer was stopped at location 600, 400
+              text("Time: " + finalTime, 600, 400);
+            }
+          }
+        </code>
+      </pre>
+    <h3>
+    <h3>
+      HTML Code:
+    </h3>
+    <pre>
+      <code>
+        &lt;!-- Defines this as an HTML file --&gt;
+        &lt;!DOCTYPE html&gt;
+        &lt;!-- Sets text language to english --&gt;
+        &lt;html lang="en"&gt;
+        &lt;!-- All the information about the page, linking to external files, etc --&gt;
+          &lt;head&gt;
+            &lt;!-- Setting character set to utf-8 --&gt;
+            &lt;meta charset="utf-8"&gt;
+            &lt;!-- Setting visible area of the page based on device width --&gt;
+            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+            &lt;!-- Sets title of page --&gt;
+            &lt;title>A6&lt;/title&gt;
+            &lt;!-- Sets style of the body text  --&gt;
+            &lt;style> body {padding: 0; margin: 0;}&lt;/style&gt;
+            &lt;!-- Links to p5 --&gt;
+            &lt;script src="../p5.min.js">&lt;/script&gt;
+            &lt;!-- Links to additional p5 file --&gt;
+            &lt;script src="../addons/p5.dom.min.js">&lt;/script&gt;
+            &lt;!-- Links to additional p5 file --&gt;
+            &lt;script src="../addons/p5.serialport.js">&lt;/script&gt;
+            &lt;!-- Links to the sketch.js file --&gt;
+            &lt;script src="sketch.js">&lt;/script&gt;
+          &lt;!-- Closes out the head section  --&gt;
+          &lt;/head&gt;
+          &lt;!-- Body opening tag --&gt;
+          &lt;body&gt;
+          &lt;!-- Body closing tag --&gt;
+          &lt;/body&gt;
+        &lt;!-- Closes out the html  --&gt;
+        &lt;/html&gt;
+      </code>
+    </pre>
+
+    <h3>
+      GIFs:
+    </h3>
+    <a style="padding: 10px 30px 10px"><img src="a6/a62.gif" width=400></a>
+    <a style="padding: 10px 30px 10px"><img src="a6/a6.gif" width=400></a>
+    <p style="padding: 0px 30px 5px">
+      Touching the capacitive sensor starts and stops the timer. <br>
+      When the button is pressed, the timer resets.<br>
+      And when a key on the keyboard is pressed, it toggles the LED on/off.<br>
+    </p>
+  </body>
+</html>
